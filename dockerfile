@@ -1,42 +1,36 @@
-ARG NODE_VERSION=18
-FROM n8nio/base:${NODE_VERSION}
-
-# Download the remote .env file
-RUN curl -o .env https://github.com/Automations-Project/n8n-docker-coolify/raw/main/.env
+FROM node:16-alpine
 
 ARG N8N_VERSION
+
 RUN if [ -z "$N8N_VERSION" ] ; then echo "The N8N_VERSION argument is missing!" ; exit 1; fi
 
-ENV N8N_VERSION=${N8N_VERSION}
-ENV NODE_ENV=production
-ENV N8N_RELEASE_TYPE=stable
+# Update everything and install needed dependencies
+RUN apk add --update graphicsmagick tzdata git tini su-exec
 
-# Install necessary dependencies as root
+# Set a custom user to not have n8n run as root
 USER root
 
-RUN set -eux; \
-    apkArch="$(apk --print-arch)"; \
-    case "$apkArch" in \
-    'armv7') apk --no-cache add --virtual build-dependencies python3 build-base;; \
-    esac && \
-    npm install -g --omit=dev n8n@${N8N_VERSION} && \
-    case "$apkArch" in \
-    'armv7') apk del build-dependencies;; \
-    esac && \
-    rm -rf /usr/local/lib/node_modules/n8n/node_modules/@n8n/chat && \
-    rm -rf /usr/local/lib/node_modules/n8n/node_modules/n8n-design-system && \
-    rm -rf /usr/local/lib/node_modules/n8n/node_modules/n8n-editor-ui/node_modules && \
-    find /usr/local/lib/node_modules/n8n -type f -name "*.ts" -o -name "*.js.map" -o -name "*.vue" | xargs rm -f && \
-    rm -rf /root/.npm
-    npm install -g node-html-parser ssh2-sftp-client chance jimp uuid yup simple-crypto-js
+# Install n8n and the packages it needs to build it correctly.
+RUN apk --update add --virtual build-dependencies python3 build-base ca-certificates && \
+	npm config set python "$(which python3)" && \
+	npm_config_user=root npm install -g full-icu n8n@${N8N_VERSION} && \
+	apk del build-dependencies \
+	&& rm -rf /root /tmp/* /var/cache/apk/* && mkdir /root;
 
-# Switch back to the node user
-USER node
 
-COPY docker-entrypoint.sh /
+# Install fonts
+RUN apk --no-cache add --virtual fonts msttcorefonts-installer fontconfig && \
+	update-ms-fonts && \
+	fc-cache -f && \
+	apk del fonts && \
+	find  /usr/share/fonts/truetype/msttcorefonts/ -type l -exec unlink {} \; \
+	&& rm -rf /root /tmp/* /var/cache/apk/* && mkdir /root
 
-RUN \
-    mkdir .n8n && \
-    chown node:node .n8n
+ENV NODE_ICU_DATA /usr/local/lib/node_modules/full-icu
 
+WORKDIR /data
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
+
+EXPOSE 5678/tcp
