@@ -1,0 +1,28 @@
+services:
+  n8n:
+    image: 'docker.n8n.io/n8nio/n8n:ai-beta'
+    environment:
+      - SERVICE_FQDN_N8N
+      - 'N8N_EDITOR_BASE_URL=${SERVICE_FQDN_N8N}'
+      - 'WEBHOOK_URL=${SERVICE_FQDN_N8N}'
+      - 'N8N_HOST=${SERVICE_DOMAIN_N8N}'
+      - 'GENERIC_TIMEZONE="Europe/Istanbul"'
+      - 'TZ="Europe/Istanbul"'
+      - 'DB_POSTGRESDB_DATABASE=${DB_POSTGRESDB_DATABASE}'
+      - 'DB_POSTGRESDB_HOST=${DB_POSTGRESDB_HOST}'
+      - 'DB_POSTGRESDB_PASSWORD=${DB_POSTGRESDB_PASSWORD}'
+      - 'DB_POSTGRESDB_PORT=${DB_POSTGRESDB_PORT}'
+      - 'DB_POSTGRESDB_SCHEMA=${DB_POSTGRESDB_SCHEMA}'
+      - 'DB_POSTGRESDB_USER=${DB_POSTGRESDB_USER}'
+      - 'DB_TYPE=${DB_TYPE}'
+      - 'EXECUTIONS_MODE=${EXECUTIONS_MODE}'
+      - 'N8N_LOG_LEVEL=${N8N_LOG_LEVEL}'
+      - 'N8N_METRICS=${N8N_METRICS}'
+      - 'QUEUE_BULL_PREFIX=${QUEUE_BULL_PREFIX}'
+      - 'QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB}'
+      - 'QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST}'
+      - 'QUEUE_BULL_REDIS_PASSWORD=${QUEUE_BULL_REDIS_PASSWORD}'
+      - 'QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT}'
+    volumes:
+      - 'n8n-data:/home/node/.n8n'
+      - 'n8n-data/files:/home/node/files'
